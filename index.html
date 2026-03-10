@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PedPer — Manuscript Template Generator</title>
+<script src="docx.iife.js"></script>
+<style>
+/* ── Variables ─────────────────────────────────────────────────── */
+:root{
+  --dark:#3b2a7a; --med:#5c4db1; --light:#ede9f8; --line:#d8d1f2;
+  --gold:#f0a500; --text:#1a1a2e; --muted:#888; --white:#fff;
+  --warn-bg:#fff8e7; --warn-bd:#e8a000; --warn-tx:#7a4a00;
+  --ok-bg:#edf7f0; --ok:#1a7a3b;
+  --err-bg:#fdecea; --err:#c0392b;
+  --note:#7b5ea7; --note-bg:#f3f0fb;
+  --input-bd:#c5bbee; --input-focus:#5c4db1;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Aptos','Aptos Display','Segoe UI',Arial,sans-serif;
+  font-size:11pt;color:var(--text);background:#eae6f4;
+  min-height:100vh;padding:0 0 60px;
+}
+
+/* ── Page header ───────────────────────────────────────────────── */
+.site-header{
+  background:var(--dark);padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;
+}
+.site-header-brand{color:#fff;}
+.site-header-brand strong{font-size:14pt;display:block;line-height:1.2;}
+.site-header-brand span{font-size:9pt;color:#c9c0f0;font-style:italic;}
+.site-header-right{font-size:9pt;color:#c9c0f0;font-style:italic;text-align:right;}
+.gold-bar{height:4px;background:var(--gold);}
+
+/* ── Container ─────────────────────────────────────────────────── */
+.container{max-width:780px;margin:32px auto 0;padding:0 16px;}
+
+/* ── Intro card ────────────────────────────────────────────────── */
+.intro-card{
+  background:var(--white);border-radius:8px;
+  border-left:5px solid var(--gold);
+  padding:18px 22px;margin-bottom:24px;
+  box-shadow:0 2px 12px rgba(59,42,122,.08);
+}
+.intro-card h1{font-size:15pt;color:var(--dark);margin-bottom:6px;}
+.intro-card p{font-size:10pt;color:#555;line-height:1.6;}
+
+/* ── Step indicator ────────────────────────────────────────────── */
+.steps{display:flex;gap:0;margin-bottom:28px;flex-wrap:wrap;}
+.step{
+  flex:1;padding:10px 10px;min-width:0;
+  background:var(--light);border:1px solid var(--line);
+  font-size:8.5pt;font-weight:600;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+  border-right:none;white-space:nowrap;overflow:hidden;
+}
+.step:first-child{border-radius:8px 0 0 8px;}
+.step:last-child{border-radius:0 8px 8px 0;border-right:1px solid var(--line);}
+.step.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+.step.done{background:#edf7f0;color:var(--ok);border-color:#a8d8b8;}
+.step-num{
+  width:20px;height:20px;border-radius:50%;
+  background:currentColor;color:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:8pt;flex-shrink:0;
+}
+.step.active .step-num{background:var(--gold);color:var(--dark);}
+.step.done .step-num{background:var(--ok);}
+
+/* ── Form card ─────────────────────────────────────────────────── */
+.form-card{
+  background:var(--white);border-radius:8px;
+  box-shadow:0 2px 16px rgba(59,42,122,.09);
+  overflow:hidden;margin-bottom:20px;
+}
+.form-section-head{
+  background:var(--dark);padding:11px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.form-section-head span{font-size:11pt;font-weight:700;color:#fff;}
+.form-section-head small{font-size:9pt;color:#c9c0f0;font-style:italic;}
+.form-section-body{padding:20px 22px;}
+
+/* ── Field groups ──────────────────────────────────────────────── */
+.field{margin-bottom:18px;}
+.field:last-child{margin-bottom:0;}
+label{
+  display:block;font-size:9.5pt;font-weight:700;
+  color:var(--dark);margin-bottom:5px;
+}
+label .req{color:var(--err);margin-left:2px;}
+label .hint{font-weight:400;color:var(--muted);font-size:8.5pt;margin-left:6px;}
+input[type=text],input[type=email],select,textarea{
+  width:100%;padding:9px 12px;
+  border:1.5px solid var(--input-bd);border-radius:6px;
+  font-family:inherit;font-size:10.5pt;color:var(--text);
+  background:#faf9fe;transition:border-color .2s,box-shadow .2s;
+  outline:none;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--input-focus);
+  box-shadow:0 0 0 3px rgba(92,77,177,.12);
+}
+input.error,select.error,textarea.error{border-color:var(--err);background:#fdf5f5;}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c4db1' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+
+/* ── Grid helpers ──────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:520px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+/* ── Keyword row ───────────────────────────────────────────────── */
+.kw-row{display:flex;flex-wrap:wrap;gap:10px;}
+.kw-row .field{flex:1;min-width:140px;margin-bottom:0;}
+
+/* ── Note banner ───────────────────────────────────────────────── */
+.note-banner{
+  background:var(--note-bg);border-left:4px solid var(--note);
+  border-radius:0 6px 6px 0;padding:8px 12px;
+  font-size:9pt;color:var(--note);font-style:italic;line-height:1.5;
+  margin-bottom:18px;
+}
+.note-banner::before{content:"⚑  ";font-style:normal;font-weight:700;}
+
+/* ── Action bar ────────────────────────────────────────────────── */
+.action-bar{
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:12px;padding:16px 22px;
+  border-top:1px solid var(--line);background:#faf9fe;
+  flex-wrap:wrap;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;border-radius:7px;
+  font-family:inherit;font-size:11pt;font-weight:700;
+  cursor:pointer;border:none;transition:background .2s,transform .1s;
+}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--dark);color:#fff;}
+.btn-primary:hover{background:var(--med);}
+.btn-secondary{background:var(--light);color:var(--dark);border:1.5px solid var(--line);}
+.btn-secondary:hover{background:var(--line);}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* ── Error msg ─────────────────────────────────────────────────── */
+.err-msg{
+  font-size:8.5pt;color:var(--err);margin-top:4px;display:none;
+}
+.err-msg.show{display:block;}
+.form-err-banner{
+  background:var(--err-bg);border:1px solid #f5b7b1;
+  border-radius:6px;padding:10px 14px;
+  font-size:9.5pt;color:var(--err);margin-bottom:16px;display:none;
+}
+.form-err-banner.show{display:block;}
+
+/* ── Success screen ────────────────────────────────────────────── */
+#success-screen{
+  display:none;text-align:center;
+  background:var(--white);border-radius:8px;
+  box-shadow:0 2px 16px rgba(59,42,122,.09);
+  padding:48px 32px;
+}
+#success-screen .tick{font-size:52px;margin-bottom:16px;}
+#success-screen h2{font-size:16pt;color:var(--ok);margin-bottom:10px;}
+#success-screen p{font-size:10.5pt;color:#555;line-height:1.7;max-width:460px;margin:0 auto 20px;}
+#success-screen .btn-reset{background:var(--dark);color:#fff;border:none;padding:11px 28px;border-radius:7px;font-family:inherit;font-size:11pt;font-weight:700;cursor:pointer;margin-top:8px;}
+
+/* ── Spinner ───────────────────────────────────────────────────── */
+.spinner{
+  width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin .7s linear infinite;display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Progress bar ──────────────────────────────────────────────── */
+.progress-wrap{height:4px;background:var(--line);border-radius:2px;margin-top:12px;display:none;}
+.progress-bar{height:4px;background:var(--gold);border-radius:2px;width:0;transition:width .3s;}
+
+/* ── Checklist items ───────────────────────────────────────────── */
+.chk-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 14px;border-bottom:1px solid var(--line);
+  cursor:pointer;transition:background .15s;
+}
+.chk-item:last-child{border-bottom:none;}
+.chk-item:hover{background:#f8f7fe;}
+.chk-item.checked{background:var(--ok-bg);}
+.chk-item input[type=checkbox]{
+  width:18px;height:18px;flex-shrink:0;margin-top:1px;
+  accent-color:var(--ok);cursor:pointer;
+}
+.chk-item-text{font-size:10pt;color:var(--text);line-height:1.5;}
+.chk-item.checked .chk-item-text{color:#1a7a3b;}
+.chk-progress{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:#f8f7fe;
+  border-top:1px solid var(--line);
+  font-size:9.5pt;
+}
+.chk-count{font-weight:700;color:var(--dark);}
+.chk-count.all-done{color:var(--ok);}
+
+/* ── Site footer ───────────────────────────────────────────────── */
+.site-footer{
+  text-align:center;font-size:9pt;color:var(--muted);
+  font-style:italic;margin-top:40px;padding:0 16px;
+}
+
+/* ── TF cards ──────────────────────────────────────────────────── */
+.tf-card{
+  border:1.5px solid var(--line);border-radius:8px;
+  overflow:hidden;margin-bottom:14px;background:#fff;
+}
+.tf-card-head{
+  display:grid;grid-template-columns:90px 64px 1fr auto;
+  gap:8px;align-items:center;
+  background:var(--light);padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+.tf-type-sel{
+  padding:6px 8px;border:1.5px solid var(--input-bd);border-radius:6px;
+  font-family:inherit;font-size:10pt;font-weight:700;color:var(--dark);
+  background:#fff;appearance:none;text-align:center;cursor:pointer;
+}
+.tf-num-inp,.tf-title-inp{
+  padding:6px 10px;border:1.5px solid var(--input-bd);border-radius:6px;
+  font-family:inherit;font-size:10pt;background:#faf9fe;outline:none;
+}
+.tf-num-inp{width:64px;}
+.tf-title-inp{width:100%;}
+.tf-num-inp:focus,.tf-title-inp:focus{border-color:var(--input-focus);box-shadow:0 0 0 3px rgba(92,77,177,.1);}
+.tf-remove-btn{
+  background:none;border:none;color:#ccc;font-size:16px;
+  cursor:pointer;padding:0 4px;line-height:1;transition:color .15s;
+}
+.tf-remove-btn:hover{color:var(--err);}
+
+/* Figure body */
+.tf-fig-body{padding:14px;}
+.tf-upload-zone{
+  border:2px dashed var(--line);border-radius:8px;
+  padding:24px 16px;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;
+  background:#faf9fe;margin-bottom:10px;
+}
+.tf-upload-zone:hover,.tf-upload-zone.drag-over{border-color:var(--med);background:var(--light);}
+.tf-upload-zone p{font-size:10pt;color:var(--muted);margin-bottom:6px;}
+.tf-upload-zone small{font-size:8.5pt;color:#bbb;}
+.tf-preview-wrap{display:none;margin-bottom:10px;text-align:center;}
+.tf-preview-wrap img{max-width:100%;max-height:220px;border-radius:4px;border:1px solid var(--line);}
+.tf-preview-wrap .tf-img-info{font-size:8.5pt;color:var(--muted);margin-top:4px;}
+.tf-preview-wrap .tf-img-clear{font-size:8.5pt;color:var(--err);cursor:pointer;margin-left:8px;}
+.tf-caption-inp{
+  width:100%;padding:7px 12px;border:1.5px solid var(--input-bd);border-radius:6px;
+  font-family:inherit;font-size:10pt;background:#faf9fe;outline:none;
+}
+.tf-caption-inp:focus{border-color:var(--input-focus);box-shadow:0 0 0 3px rgba(92,77,177,.1);}
+
+/* Table body */
+.tf-tbl-body{padding:14px;}
+.tf-grid-outer{overflow-x:auto;margin-bottom:10px;}
+.tf-grid{border-collapse:collapse;min-width:100%;}
+.tf-grid td{
+  border:1px solid var(--line);padding:0;min-width:80px;
+}
+.tf-grid td.tf-row-ctrl{
+  width:28px;min-width:28px;background:#f8f7fe;border-color:#e8e4f4;
+}
+.tf-grid th.tf-col-ctrl{
+  height:26px;background:#f8f7fe;border:1px solid #e8e4f4;padding:0;
+  text-align:center;vertical-align:middle;
+}
+.tf-grid td input{
+  width:100%;padding:5px 7px;border:none;outline:none;
+  font-family:inherit;font-size:9.5pt;background:transparent;
+}
+.tf-grid tr:first-child td input{font-weight:700;background:#ede9f8;}
+.tf-ctrl-btn{
+  background:none;border:none;color:#aaa;font-size:12px;
+  cursor:pointer;padding:2px 5px;transition:color .15s;
+  width:100%;height:100%;
+}
+.tf-ctrl-btn:hover{color:var(--err);}
+.tf-add-col-btn,.tf-add-row-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--light);border:1.5px solid var(--line);
+  color:var(--dark);padding:5px 12px;border-radius:6px;
+  font-family:inherit;font-size:9pt;font-weight:700;
+  cursor:pointer;margin-top:0;transition:background .15s;
+}
+.tf-add-col-btn:hover,.tf-add-row-btn:hover{background:var(--line);}
+.tf-tbl-btns{display:flex;gap:8px;margin-bottom:10px;}
+.tf-note-inp{
+  width:100%;padding:7px 12px;border:1.5px solid var(--input-bd);border-radius:6px;
+  font-family:inherit;font-size:9.5pt;background:#faf9fe;outline:none;
+}
+.tf-note-inp::placeholder{font-style:italic;}
+.tf-note-inp:focus{border-color:var(--input-focus);box-shadow:0 0 0 3px rgba(92,77,177,.1);}
+
+/* Add TF button */
+.tf-add-main{
+  display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;
+}
+.tf-add-main button{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:7px;
+  font-family:inherit;font-size:10.5pt;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--line);transition:background .15s;
+}
+.tf-add-table-btn{background:var(--light);color:var(--dark);}
+.tf-add-table-btn:hover{background:var(--line);}
+.tf-add-figure-btn{background:#edf7f0;color:#1a7a3b;border-color:#a8d8b8;}
+.tf-add-figure-btn:hover{background:#d4eedb;}
+
+/* ── Word count badge ─────────────────────────────────────────── */
+.wc-badge{
+  display:inline-block;font-size:8.5pt;color:var(--muted);
+  margin-top:4px;font-weight:400;
+}
+.wc-badge.warn{color:var(--err);}
+.wc-badge.ok{color:var(--ok);}
+
+/* ── Subsection card ──────────────────────────────────────────── */
+.sub-label{
+  display:flex;align-items:center;gap:8px;
+  font-size:10pt;font-weight:700;color:var(--med);
+  margin:20px 0 8px;padding-bottom:6px;
+  border-bottom:2px solid var(--line);
+}
+.sub-label:first-child{margin-top:0;}
+
+/* ── Findings theme card ──────────────────────────────────────── */
+.finding-card{
+  border:1.5px solid var(--line);border-radius:8px;
+  overflow:hidden;margin-bottom:14px;background:#fff;
+}
+.finding-card-head{
+  display:flex;align-items:center;gap:8px;
+  background:var(--light);padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+.finding-card-head input{
+  flex:1;padding:6px 10px;border:1.5px solid var(--input-bd);
+  border-radius:6px;font-family:inherit;font-size:10pt;
+  background:#faf9fe;outline:none;
+}
+.finding-card-head input:focus{border-color:var(--input-focus);}
+.finding-card-body{padding:14px;}
+.finding-remove{
+  background:none;border:none;color:#ccc;font-size:16px;
+  cursor:pointer;padding:0 4px;transition:color .15s;
+}
+.finding-remove:hover{color:var(--err);}
+.finding-add-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:7px;
+  font-family:inherit;font-size:10.5pt;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--line);
+  background:var(--light);color:var(--dark);transition:background .15s;
+  margin-top:4px;
+}
+.finding-add-btn:hover{background:var(--line);}
+</style>
+</head>
+<body>
+
+<!-- Site header -->
+<div class="site-header">
+  <div class="site-header-brand">
+    <strong>Pedagogical Perspective</strong>
+    <span>PedPer  •  ISSN: 2822-4841  •  Open Access  •  Double-Blind Review</span>
+  </div>
+  <div class="site-header-right">Manuscript Template Generator<br>pedagogicalperspective.com</div>
+</div>
+<div class="gold-bar"></div>
+
+<div class="container">
+
+  <!-- Intro -->
+  <div class="intro-card">
+    <h1>Full Manuscript Template Generator</h1>
+    <p>Fill in <strong>all sections</strong> of your manuscript below. The generated Word file will be ready for direct submission to the journal system — no further editing required. All fields marked <span style="color:#c0392b;">*</span> are required.</p>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step active" id="step1"><div class="step-num">1</div> Identity</div>
+    <div class="step" id="step2"><div class="step-num">2</div> Abstract</div>
+    <div class="step" id="step3"><div class="step-num">3</div> Introduction</div>
+    <div class="step" id="step4"><div class="step-num">4</div> Method</div>
+    <div class="step" id="step5"><div class="step-num">5</div> Findings</div>
+    <div class="step" id="step6"><div class="step-num">6</div> Discussion</div>
+    <div class="step" id="step7"><div class="step-num">7</div> Supplements</div>
+    <div class="step" id="step8"><div class="step-num">8</div> Checklist</div>
+  </div>
+
+  <!-- ══ FORM ════════════════════════════════════════════════════ -->
+  <form id="tmpl-form" novalidate>
+    <input type="hidden" name="access_key" value="50b20f12-c947-406a-9d87-96ca8d298262">
+    <input type="hidden" name="subject" value="PedPer — Manuscript Template Request">
+    <input type="hidden" name="from_name" value="Pedagogical Perspective">
+
+    <!-- ── SECTION 1: Manuscript Details ─────────────────────── -->
+    <div class="form-card" id="card1">
+      <div class="form-section-head">
+        <span>01 — Manuscript Details</span>
+        <small>Identification &amp; title</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="note-banner">This is the anonymised submission version. Do not include author names or institutional identifiers in any field.</div>
+
+        <div class="grid2">
+          <div class="field">
+            <label for="article-type">Article Type <span class="req">*</span></label>
+            <select id="article-type" name="article_type" required>
+              <option value="">— Select —</option>
+              <option>Research Article</option>
+              <option>Review Article</option>
+              <option>Conceptual / Theoretical Paper</option>
+              <option>Methodological Paper</option>
+              <option>Systematic Review / Meta-Analysis</option>
+              <option>Action Research</option>
+              <option>Case Study</option>
+            </select>
+            <div class="err-msg" id="err-article-type">Please select an article type.</div>
+          </div>
+          <div class="field">
+            <label for="sub-date">Submission Date <span class="req">*</span></label>
+            <input type="text" id="sub-date" name="submission_date" placeholder="dd.mm.yyyy" required>
+            <div class="err-msg" id="err-sub-date">Please enter the submission date.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="title">Manuscript Title <span class="req">*</span> <span class="hint">Sentence case • 10–12 words • No abbreviations</span></label>
+          <input type="text" id="title" name="manuscript_title" placeholder="Full title of the manuscript — sentence case, no abbreviations, 10–12 words" required>
+          <div class="err-msg" id="err-title">Please enter the manuscript title.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: Keywords & Email ──────────────────────── -->
+    <div class="form-card" id="card2">
+      <div class="form-section-head">
+        <span>02 — Keywords &amp; Contact</span>
+        <small>3–7 keywords • Author email</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="field">
+          <label>Keywords <span class="req">*</span> <span class="hint">At least 3 required • Lowercase • Not from title</span></label>
+          <div class="kw-row">
+            <div class="field"><input type="text" id="kw1" name="keyword_1" placeholder="keyword 1" required></div>
+            <div class="field"><input type="text" id="kw2" name="keyword_2" placeholder="keyword 2" required></div>
+            <div class="field"><input type="text" id="kw3" name="keyword_3" placeholder="keyword 3" required></div>
+            <div class="field"><input type="text" id="kw4" name="keyword_4" placeholder="keyword 4 (optional)"></div>
+            <div class="field"><input type="text" id="kw5" name="keyword_5" placeholder="keyword 5 (optional)"></div>
+          </div>
+          <div class="err-msg" id="err-keywords">Please enter at least 3 keywords.</div>
+        </div>
+
+        <div class="field">
+          <label for="author-email">Corresponding Author Email <span class="req">*</span> <span class="hint">Confirmation will be sent here</span></label>
+          <input type="email" id="author-email" name="email" placeholder="author@university.edu" required>
+          <div class="err-msg" id="err-author-email">Please enter a valid email address.</div>
+        </div>
+
+        <!-- Hidden: composed body for Web3Forms -->
+        <input type="hidden" id="web3-message" name="message" value="">
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: Structured Abstract ───────────────────── -->
+    <div class="form-card" id="card3">
+      <div class="form-section-head">
+        <span>03 — Structured Abstract</span>
+        <small>250–300 words total • No citations</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="field">
+          <label for="abs-purpose"><strong>Purpose</strong> <span class="req">*</span> <span class="hint">State the problem and aim of the study (2–3 sentences)</span></label>
+          <textarea id="abs-purpose" name="abstract_purpose" rows="3" placeholder="State the problem in the field and the purpose of the study in 2–3 sentences." required></textarea>
+          <div class="err-msg" id="err-abs-purpose">Please complete the Purpose section.</div>
+        </div>
+
+        <div class="field">
+          <label for="abs-method"><strong>Method</strong> <span class="req">*</span> <span class="hint">Research design, sample, instruments, analysis</span></label>
+          <textarea id="abs-method" name="abstract_method" rows="3" placeholder="Specify the research design, sample, instruments, and data analysis approach." required></textarea>
+          <div class="err-msg" id="err-abs-method">Please complete the Method section.</div>
+        </div>
+
+        <div class="field">
+          <label for="abs-findings"><strong>Findings</strong> <span class="req">*</span> <span class="hint">Significant, interesting, or surprising results</span></label>
+          <textarea id="abs-findings" name="abstract_findings" rows="3" placeholder="Highlight significant, interesting, or surprising results." required></textarea>
+          <div class="err-msg" id="err-abs-findings">Please complete the Findings section.</div>
+        </div>
+
+        <div class="field">
+          <label for="abs-conclusion"><strong>Conclusion</strong> <span class="req">*</span> <span class="hint">Implications for research and practice</span></label>
+          <textarea id="abs-conclusion" name="abstract_conclusion" rows="3" placeholder="State the main implications for research and practice." required></textarea>
+          <div class="err-msg" id="err-abs-conclusion">Please complete the Conclusion section.</div>
+        </div>
+
+        <div id="abs-wc" class="wc-badge">0 words total</div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: Introduction ──────────────────────────── -->
+    <div class="form-card" id="card4">
+      <div class="form-section-head">
+        <span>04 — Introduction</span>
+        <small>Literature review &amp; research questions</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="note-banner">Begin with a broad contextualisation; narrow toward your research problem. Include a literature review, the gap, and your research questions. Use in-text citations in APA 7 format (Author, Year). Anonymise self-citations as "Author (Year)".</div>
+
+        <div class="field">
+          <label for="body-intro">Introduction Text <span class="req">*</span> <span class="hint">Full text with APA 7 in-text citations</span></label>
+          <textarea id="body-intro" rows="14" placeholder="Begin with a broad contextualisation of the topic, narrowing toward your specific research problem.
+
+Paragraph structure suggestion:
+• General topic statement and significance
+• What the literature has found (cite key studies)
+• The gap or unanswered question in the literature
+• Aim and purpose of this study
+• Research questions or hypotheses
+
+Example: 'The relationship between X and Y has been widely studied in the field of education (Smith, 2020; Johnson & Lee, 2021). However, few studies have examined... The purpose of this study is to...
+
+Research Questions:
+1. What is the effect of...?
+2. How do participants perceive...?'" style="min-height:260px;font-size:10pt;line-height:1.7;" required></textarea>
+          <div class="err-msg" id="err-body-intro">Please enter the Introduction section.</div>
+          <div class="wc-badge" id="wc-intro">0 words</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 5: Method ────────────────────────────────── -->
+    <div class="form-card" id="card5">
+      <div class="form-section-head">
+        <span>05 — Method</span>
+        <small>Research design, participants, instruments, procedure, analysis</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="note-banner">Each subsection below is required. Remove all institutional identifiers. Anonymise ethics committee names (e.g., "XXX Ethics Committee").</div>
+
+        <div class="sub-label">5.1 — Research Design</div>
+        <div class="field">
+          <label for="body-design">Research Design <span class="req">*</span> <span class="hint">Paradigm, approach, and methodological framework</span></label>
+          <textarea id="body-design" rows="5" placeholder="State the research paradigm (e.g., positivist, interpretivist, pragmatist) and design (e.g., quasi-experimental, phenomenological, mixed-methods sequential explanatory). Cite the methodological framework adopted." required></textarea>
+          <div class="err-msg" id="err-body-design">Please enter the Research Design subsection.</div>
+          <div class="wc-badge" id="wc-design">0 words</div>
+        </div>
+
+        <div class="sub-label">5.2 — Participants / Study Group</div>
+        <div class="field">
+          <label for="body-participants">Participants <span class="req">*</span> <span class="hint">Number, characteristics, sampling procedure</span></label>
+          <textarea id="body-participants" rows="5" placeholder="Describe the participants: number, key characteristics (age, grade, gender distribution), eligibility criteria, and sampling procedure. Anonymise school, city, and institution names (e.g., 'School A in a metropolitan city in western Türkiye')." required></textarea>
+          <div class="err-msg" id="err-body-participants">Please enter the Participants subsection.</div>
+          <div class="wc-badge" id="wc-participants">0 words</div>
+        </div>
+
+        <div class="sub-label">5.3 — Data Collection Instruments</div>
+        <div class="field">
+          <label for="body-instruments">Instruments <span class="req">*</span> <span class="hint">Describe each instrument; report validity/reliability</span></label>
+          <textarea id="body-instruments" rows="5" placeholder="Describe each instrument used (survey, interview protocol, observation form, test, etc.). Report validity evidence and reliability coefficients (e.g., Cronbach's α). Cite adapted or adopted instruments." required></textarea>
+          <div class="err-msg" id="err-body-instruments">Please enter the Instruments subsection.</div>
+          <div class="wc-badge" id="wc-instruments">0 words</div>
+        </div>
+
+        <div class="sub-label">5.4 — Procedure</div>
+        <div class="field">
+          <label for="body-procedure">Procedure <span class="req">*</span> <span class="hint">Data collection steps, timeline, ethical procedures</span></label>
+          <textarea id="body-procedure" rows="5" placeholder="Describe data collection step by step. Include timeline, setting, and ethical procedures. State ethics approval (e.g., 'Ethical approval was obtained from XXX Ethics Committee, Decision No. 2024/XX, dated DD.MM.YYYY'). Anonymise the committee name." required></textarea>
+          <div class="err-msg" id="err-body-procedure">Please enter the Procedure subsection.</div>
+          <div class="wc-badge" id="wc-procedure">0 words</div>
+        </div>
+
+        <div class="sub-label">5.5 — Validity and Reliability</div>
+        <div class="field">
+          <label for="body-validity">Validity &amp; Reliability <span class="req">*</span> <span class="hint">Quantitative: coefficients / Qualitative: credibility measures</span></label>
+          <textarea id="body-validity" rows="5" placeholder="For quantitative: report reliability coefficients, construct validity, confirmatory factor analysis results. For qualitative: describe credibility (member checking, prolonged engagement), transferability (thick description), and inter-coder reliability measures." required></textarea>
+          <div class="err-msg" id="err-body-validity">Please enter the Validity and Reliability subsection.</div>
+          <div class="wc-badge" id="wc-validity">0 words</div>
+        </div>
+
+        <div class="sub-label">5.6 — Data Analysis</div>
+        <div class="field">
+          <label for="body-analysis">Data Analysis <span class="req">*</span> <span class="hint">Analytical approach, software, significance thresholds</span></label>
+          <textarea id="body-analysis" rows="5" placeholder="Describe the analytical approach in sufficient detail for replication. Report statistical tests used (e.g., independent samples t-test, ANOVA, thematic analysis, content analysis), software (e.g., SPSS 28, MAXQDA 2022), and significance thresholds (e.g., p < .05)." required></textarea>
+          <div class="err-msg" id="err-body-analysis">Please enter the Data Analysis subsection.</div>
+          <div class="wc-badge" id="wc-analysis">0 words</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 6: Findings ──────────────────────────────── -->
+    <div class="form-card" id="card6">
+      <div class="form-section-head">
+        <span>06 — Findings</span>
+        <small>Present results objectively • Comment on each table/figure</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="note-banner">Present all findings objectively. Simply inserting tables or figures is not sufficient — comment on each one in the text. Organise by research question or theme. You may add multiple finding themes below.</div>
+
+        <div id="findings-list"></div>
+
+        <button type="button" class="finding-add-btn" onclick="addFindingTheme()">＋ Add Finding / Theme</button>
+
+        <div class="err-msg" id="err-findings" style="margin-top:8px;">Please add at least one finding theme.</div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 7: Discussion ────────────────────────────── -->
+    <div class="form-card" id="card7">
+      <div class="form-section-head">
+        <span>07 — Discussion</span>
+        <small>Interpret findings in relation to literature</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="note-banner">Interpret the main findings in relation to your research questions and the existing literature. Connect findings to the theoretical framework introduced in the Introduction.</div>
+
+        <div class="field">
+          <label for="body-discussion">Discussion Text <span class="req">*</span> <span class="hint">Address each research question; compare with literature</span></label>
+          <textarea id="body-discussion" rows="14" placeholder="Interpret the main findings in relation to your research questions and the existing literature.
+
+Structure suggestion:
+• Restate the main finding briefly
+• Compare with similar/contrasting studies (cite)
+• Explain why findings differ or align with previous research
+• Discuss theoretical implications
+• Address each research question in turn or organise thematically
+
+Example: 'The findings of this study revealed that... This result is consistent with the findings of Smith (2020) who also reported... However, unlike the study by Johnson (2021), the present study found...'" style="min-height:260px;font-size:10pt;line-height:1.7;" required></textarea>
+          <div class="err-msg" id="err-body-discussion">Please enter the Discussion section.</div>
+          <div class="wc-badge" id="wc-discussion">0 words</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 8: Conclusion ────────────────────────────── -->
+    <div class="form-card" id="card8">
+      <div class="form-section-head">
+        <span>08 — Conclusion and Recommendations</span>
+        <small>Synthesis, implications, limitations</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="sub-label">8.1 — Conclusion</div>
+        <div class="field">
+          <label for="body-conclusion">Conclusion Text <span class="req">*</span> <span class="hint">Concise synthesis of main contributions • No new citations</span></label>
+          <textarea id="body-conclusion" rows="8" placeholder="Provide a concise synthesis of the study's main contributions. State the take-home message clearly. Do not cite new references in this section. You may include practical recommendations for educators, policy-makers, or curriculum developers." style="min-height:140px;font-size:10pt;line-height:1.7;" required></textarea>
+          <div class="err-msg" id="err-body-conclusion">Please enter the Conclusion section.</div>
+          <div class="wc-badge" id="wc-conclusion">0 words</div>
+        </div>
+
+        <div class="sub-label">8.2 — Limitations and Directions for Future Research</div>
+        <div class="field">
+          <label for="body-limitations">Limitations <span class="req">*</span> <span class="hint">Sample size, generalisability, future directions</span></label>
+          <textarea id="body-limitations" rows="6" placeholder="Acknowledge the study's limitations (e.g., sample size, single-site setting, short time horizon, generalisability concerns). Propose specific directions for future research that address these limitations." style="min-height:120px;font-size:10pt;line-height:1.7;" required></textarea>
+          <div class="err-msg" id="err-body-limitations">Please enter the Limitations section.</div>
+          <div class="wc-badge" id="wc-limitations">0 words</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 9: Tables & Figures ──────────────────────── -->
+    <div class="form-card" id="card9">
+      <div class="form-section-head">
+        <span>09 — Tables &amp; Figures</span>
+        <small>Optional — embed in the document</small>
+      </div>
+      <div class="form-section-body">
+        <div class="note-banner">Use the row/column editor for tables and file upload for figures. Each item will be embedded in the Word file at its first mention in the text.</div>
+        <div id="tf-list"></div>
+        <div class="tf-add-main">
+          <button type="button" class="tf-add-table-btn" onclick="addTFTable()">＋ Add Table</button>
+          <button type="button" class="tf-add-figure-btn" onclick="addTFFigure()">＋ Add Figure</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 10: References ─────────────────────────── -->
+    <div class="form-card" id="card10">
+      <div class="form-section-head">
+        <span>10 — References</span>
+        <small>APA 7th edition • One per line</small>
+      </div>
+      <div class="form-section-body">
+
+        <div class="note-banner">Enter each reference on a separate line, in APA 7 format, alphabetically sorted. Self-citations must be anonymised: replace with "Author (Year)" in text and "[AUTHOR REFERENCE]" in the list.</div>
+
+        <div class="field">
+          <label for="references">Reference List <span class="req">*</span> <span class="hint">APA 7 • One reference per line • Alphabetical</span></label>
+          <textarea id="references" name="references" rows="10"
+            placeholder="Author, A. A., & Author, B. B. (20XX). Title of article in sentence case. Journal Name, XX(X), page–page. https://doi.org/xxxxx&#10;&#10;Author, C. C. (20XX). Book title in sentence case (2nd ed.). Publisher.&#10;&#10;Author, D. D. (20XX). Chapter title. In E. E. Editor (Ed.), Book title (pp. 00–00). Publisher."
+            style="min-height:200px;font-size:10pt;line-height:1.7;" required></textarea>
+          <div class="err-msg" id="err-references">Please enter the references.</div>
+        </div>
+
+        <div id="ref-count-row" style="font-size:9pt;color:var(--muted);margin-top:-8px;"></div>
+
+      </div>
+    </div>
+
+    <!-- ── SECTION 11: Anonymisation Checklist ────────────────── -->
+    <div class="form-card" id="card11">
+      <div class="form-section-head">
+        <span>11 — Anonymisation Checklist</span>
+        <small>All items must be confirmed before submitting</small>
+      </div>
+      <div id="chk-list">
+        <label class="chk-item" id="chk0">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">Author names and affiliations removed from title page and all sections of the manuscript.</span>
+        </label>
+        <label class="chk-item" id="chk1">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">Self-citations replaced with "Author (Year)" in text and "[AUTHOR REFERENCE]" in the reference list.</span>
+        </label>
+        <label class="chk-item" id="chk2">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">Ethics committee name anonymised (e.g., "XXX Ethics Committee" — number and date may remain).</span>
+        </label>
+        <label class="chk-item" id="chk3">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">Institution, school, city, and region names anonymised throughout the manuscript.</span>
+        </label>
+        <label class="chk-item" id="chk4">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">Funding information and acknowledgements removed.</span>
+        </label>
+        <label class="chk-item" id="chk5">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">File properties and metadata cleared of author names and institution.</span>
+        </label>
+        <label class="chk-item" id="chk6">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">Figures, images, and tables contain no identifying logos, letterheads, or location names.</span>
+        </label>
+        <label class="chk-item" id="chk7">
+          <input type="checkbox" onchange="updateChkProgress()">
+          <span class="chk-item-text">ORCID IDs removed from the main document (added on title page only, submitted separately).</span>
+        </label>
+      </div>
+      <div class="chk-progress">
+        <span class="chk-count" id="chk-count">0 / 8 confirmed</span>
+        <span style="color:var(--muted);font-size:9pt;" id="chk-hint">— Please confirm all items before submitting.</span>
+      </div>
+    </div>
+
+    <!-- ── Action bar ────────────────────────────────────────── -->
+    <div class="form-card">
+      <div class="action-bar">
+        <div id="form-err-banner" class="form-err-banner" style="flex:1;margin-bottom:0;">
+          Please fill in all required fields before submitting.
+        </div>
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span id="submit-label">⬇ Download Manuscript &amp; Send Email</span>
+          <div class="spinner" id="submit-spinner"></div>
+        </button>
+      </div>
+      <div style="padding:0 22px 16px;">
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- ══ SUCCESS ═════════════════════════════════════════════════ -->
+  <div id="success-screen">
+    <div class="tick">✅</div>
+    <h2>Manuscript Ready!</h2>
+    <p id="success-msg">Your <strong>complete manuscript</strong> has been downloaded as a Word file. A confirmation email has been sent to <strong id="success-email"></strong>.</p>
+    <p style="font-size:9.5pt;">The document is ready for direct submission via OJS at <a href="https://pedagogicalperspective.com" target="_blank" style="color:var(--med)">pedagogicalperspective.com</a>. No further editing is required.</p>
+    <button class="btn-reset" onclick="resetForm()">← Start Over</button>
+  </div>
+
+  <div class="site-footer">
+    Pedagogical Perspective (PedPer)  •  editor@pedagogicalperspective.com  •  Ordu University, Türkiye
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Word count helper
+// ═══════════════════════════════════════════════════════════════
+function wordCount(txt){
+  return txt.trim().split(/\s+/).filter(Boolean).length;
+}
+function updateWC(textareaId, badgeId, min, max){
+  const ta = document.getElementById(textareaId);
+  const badge = document.getElementById(badgeId);
+  if(!ta||!badge) return;
+  ta.addEventListener('input',()=>{
+    const wc = wordCount(ta.value);
+    badge.textContent = wc + ' words';
+    badge.className = 'wc-badge';
+    if(min && max && wc >= min && wc <= max) badge.classList.add('ok');
+    else if(max && wc > max) badge.classList.add('warn');
+  });
+}
+// Abstract total word count
+function updateAbsWC(){
+  const ids = ['abs-purpose','abs-method','abs-findings','abs-conclusion'];
+  let total = 0;
+  ids.forEach(id=>{ total += wordCount(document.getElementById(id).value); });
+  const el = document.getElementById('abs-wc');
+  el.textContent = total + ' words total';
+  el.className = 'wc-badge';
+  if(total>=250 && total<=300) el.classList.add('ok');
+  else if(total>300) el.classList.add('warn');
+}
+['abs-purpose','abs-method','abs-findings','abs-conclusion'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updateAbsWC);
+});
+updateWC('body-intro','wc-intro');
+updateWC('body-design','wc-design');
+updateWC('body-participants','wc-participants');
+updateWC('body-instruments','wc-instruments');
+updateWC('body-procedure','wc-procedure');
+updateWC('body-validity','wc-validity');
+updateWC('body-analysis','wc-analysis');
+updateWC('body-discussion','wc-discussion');
+updateWC('body-conclusion','wc-conclusion');
+updateWC('body-limitations','wc-limitations');
+
+// ═══════════════════════════════════════════════════════════════
+// Findings theme editor
+// ═══════════════════════════════════════════════════════════════
+let findingCounter = 0;
+function addFindingTheme(){
+  findingCounter++;
+  const n = document.querySelectorAll('.finding-card').length + 1;
+  const id = 'finding-'+findingCounter;
+  const card = document.createElement('div');
+  card.className='finding-card'; card.id=id;
+  card.innerHTML=`
+    <div class="finding-card-head">
+      <span style="font-weight:700;color:var(--dark);font-size:10pt;white-space:nowrap;">Finding ${n}</span>
+      <input type="text" class="finding-title-inp" placeholder="Theme / heading title (e.g., 'Participants' perceptions of online learning')">
+      <button type="button" class="finding-remove" onclick="removeFinding('${id}')">✕</button>
+    </div>
+    <div class="finding-card-body">
+      <textarea class="finding-text-inp" rows="8" placeholder="Describe findings related to this theme or category. Support with data, statistics, quotes, or figures as appropriate. Reference tables and figures by number (e.g., 'as shown in Table 1')." style="width:100%;padding:9px 12px;border:1.5px solid var(--input-bd);border-radius:6px;font-family:inherit;font-size:10pt;line-height:1.7;background:#faf9fe;outline:none;resize:vertical;min-height:120px;"></textarea>
+      <div class="wc-badge finding-wc">0 words</div>
+    </div>`;
+  document.getElementById('findings-list').appendChild(card);
+  // WC for this finding
+  const ta = card.querySelector('.finding-text-inp');
+  const wcEl = card.querySelector('.finding-wc');
+  ta.addEventListener('input',()=>{
+    wcEl.textContent = wordCount(ta.value) + ' words';
+  });
+}
+function removeFinding(id){ const el=document.getElementById(id); if(el) el.remove(); renumberFindings(); }
+function renumberFindings(){
+  document.querySelectorAll('.finding-card').forEach((card,i)=>{
+    card.querySelector('.finding-card-head span').textContent = 'Finding '+(i+1);
+  });
+}
+function getFindingsData(){
+  return Array.from(document.querySelectorAll('.finding-card')).map(card=>{
+    return {
+      title: card.querySelector('.finding-title-inp').value.trim(),
+      text: card.querySelector('.finding-text-inp').value.trim()
+    };
+  }).filter(f=>f.text);
+}
+// Add first finding by default
+addFindingTheme();
+
+// ═══════════════════════════════════════════════════════════════
+// Tables & Figures — full editor
+// ═══════════════════════════════════════════════════════════════
+let tfCounter = 0;
+
+/* ── FIGURE ── */
+function addTFFigure(){
+  tfCounter++;
+  const id = 'tf-'+tfCounter;
+  const n  = document.querySelectorAll('.tf-card[data-kind="figure"]').length + 1;
+  const card = document.createElement('div');
+  card.className='tf-card'; card.id=id; card.dataset.kind='figure';
+  card.innerHTML=`
+    <div class="tf-card-head">
+      <span style="font-weight:700;color:var(--dark);font-size:10pt;">🖼 Figure</span>
+      <input class="tf-num-inp" type="text" placeholder="No." value="${n}" title="Figure number">
+      <input class="tf-title-inp" type="text" placeholder="Caption / title">
+      <button type="button" class="tf-remove-btn" onclick="removeTF('${id}')">✕</button>
+    </div>
+    <div class="tf-fig-body">
+      <div class="tf-upload-zone" id="uz-${id}" onclick="document.getElementById('fi-${id}').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event,'${id}')">
+        <p>📁 Click to select an image</p>
+        <small>JPG, PNG, GIF — max. 10 MB</small>
+      </div>
+      <input type="file" id="fi-${id}" accept="image/*" style="display:none" onchange="handleFileInput(this,'${id}')">
+      <div class="tf-preview-wrap" id="pv-${id}">
+        <img id="img-${id}" src="" alt="preview">
+        <div class="tf-img-info" id="inf-${id}"></div>
+        <span class="tf-img-clear" onclick="clearFig('${id}')">✕ Remove image</span>
+      </div>
+      <input class="tf-caption-inp" type="text" placeholder="Note (optional) — e.g. Adapted from Smith (2023)" style="margin-top:6px;">
+    </div>`;
+  document.getElementById('tf-list').appendChild(card);
+}
+
+function handleFileInput(inp, id){
+  if(!inp.files[0]) return;
+  loadFigFile(inp.files[0], id);
+}
+function handleDrop(e, id){
+  e.preventDefault();
+  document.getElementById('uz-'+id).classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) loadFigFile(f, id);
+}
+function loadFigFile(file, id){
+  if(file.size > 10*1024*1024){ alert('File exceeds 10 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('img-'+id).src = e.target.result;
+    document.getElementById('inf-'+id).textContent = file.name+' ('+Math.round(file.size/1024)+' KB)';
+    document.getElementById('uz-'+id).style.display='none';
+    document.getElementById('pv-'+id).style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+function clearFig(id){
+  document.getElementById('img-'+id).src='';
+  document.getElementById('inf-'+id).textContent='';
+  document.getElementById('uz-'+id).style.display='';
+  document.getElementById('pv-'+id).style.display='none';
+  document.getElementById('fi-'+id).value='';
+}
+
+/* ── TABLE ── */
+function addTFTable(){
+  tfCounter++;
+  const id = 'tf-'+tfCounter;
+  const n  = document.querySelectorAll('.tf-card[data-kind="table"]').length + 1;
+  const card = document.createElement('div');
+  card.className='tf-card'; card.id=id; card.dataset.kind='table';
+  card.innerHTML=`
+    <div class="tf-card-head">
+      <span style="font-weight:700;color:var(--dark);font-size:10pt;">📋 Table</span>
+      <input class="tf-num-inp" type="text" placeholder="No." value="${n}" title="Table number">
+      <input class="tf-title-inp" type="text" placeholder="Table title">
+      <button type="button" class="tf-remove-btn" onclick="removeTF('${id}')">✕</button>
+    </div>
+    <div class="tf-tbl-body">
+      <div class="tf-tbl-btns">
+        <button type="button" class="tf-add-col-btn" onclick="addTblCol('${id}')">＋ Column</button>
+        <button type="button" class="tf-add-row-btn" onclick="addTblRow('${id}')">＋ Row</button>
+      </div>
+      <div class="tf-grid-outer">
+        <table class="tf-grid" id="tg-${id}"></table>
+      </div>
+      <input class="tf-note-inp" type="text" placeholder="Note. (optional) — e.g. *p < .05" style="margin-top:8px;">
+    </div>`;
+  document.getElementById('tf-list').appendChild(card);
+  initTable(id, 3, 3);
+}
+
+function initTable(id, cols, rows){
+  const tbl = document.getElementById('tg-'+id);
+  tbl.innerHTML='';
+  const ctrlRow = tbl.insertRow();
+  ctrlRow.insertCell().className='tf-row-ctrl';
+  for(let c=0;c<cols;c++){
+    const th=document.createElement('th');
+    th.className='tf-col-ctrl';
+    th.innerHTML=`<button type="button" class="tf-ctrl-btn" onclick="delTblCol('${id}',${c})" title="Delete column">✕</button>`;
+    ctrlRow.appendChild(th);
+  }
+  for(let r=0;r<rows;r++){
+    addTblRowRaw(id, cols, r===0);
+  }
+}
+function addTblRowRaw(id, cols, isHeader){
+  const tbl = document.getElementById('tg-'+id);
+  const row = tbl.insertRow();
+  const ctrl = row.insertCell(); ctrl.className='tf-row-ctrl';
+  ctrl.innerHTML=`<button type="button" class="tf-ctrl-btn" onclick="delTblRow(this)" title="Delete row">✕</button>`;
+  for(let c=0;c<cols;c++){
+    const cell = row.insertCell();
+    const inp = document.createElement('input');
+    inp.type='text';
+    if(isHeader) inp.placeholder='Header '+(c+1);
+    cell.appendChild(inp);
+  }
+}
+function addTblCol(id){
+  const tbl = document.getElementById('tg-'+id);
+  const rows = tbl.rows;
+  const th=document.createElement('th');
+  th.className='tf-col-ctrl';
+  const colIdx = rows[0].cells.length-1;
+  th.innerHTML=`<button type="button" class="tf-ctrl-btn" onclick="delTblCol('${id}',${colIdx})" title="Delete column">✕</button>`;
+  rows[0].appendChild(th);
+  for(let r=1;r<rows.length;r++){
+    const cell=rows[r].insertCell();
+    const inp=document.createElement('input'); inp.type='text';
+    if(r===1) inp.placeholder='Header '+(colIdx+1);
+    cell.appendChild(inp);
+  }
+}
+function addTblRow(id){
+  const tbl = document.getElementById('tg-'+id);
+  const cols = tbl.rows[0].cells.length - 1;
+  addTblRowRaw(id, cols, false);
+}
+function delTblCol(id, colIdx){
+  const tbl = document.getElementById('tg-'+id);
+  for(let r=0;r<tbl.rows.length;r++){
+    const row=tbl.rows[r];
+    if(row.cells.length > 2) row.deleteCell(colIdx+1);
+  }
+}
+function delTblRow(btn){
+  const row=btn.closest('tr');
+  const tbl=row.closest('table');
+  if(tbl.rows.length>2) row.remove();
+}
+
+/* ── Shared ── */
+function removeTF(id){ const el=document.getElementById(id); if(el) el.remove(); }
+
+/* ── Get data ── */
+function getTFItems(){
+  return Array.from(document.querySelectorAll('.tf-card')).map(card=>{
+    const kind = card.dataset.kind;
+    const id   = card.id;
+    const num  = card.querySelector('.tf-num-inp').value.trim();
+    const title= card.querySelector('.tf-title-inp').value.trim();
+    if(kind==='figure'){
+      const imgEl = card.querySelector('img');
+      const note  = card.querySelectorAll('input[type=text]')[2]?.value.trim()||'';
+      return { kind, num, title, note, imgSrc: imgEl?.src||'' };
+    } else {
+      const tbl  = card.querySelector('.tf-grid');
+      const note = card.querySelector('.tf-note-inp')?.value.trim()||'';
+      const rows = [];
+      if(tbl){ for(let r=1;r<tbl.rows.length;r++){
+        const cells=Array.from(tbl.rows[r].cells).slice(1).map(c=>c.querySelector('input')?.value||'');
+        rows.push(cells);
+      }}
+      return { kind, num, title, note, rows };
+    }
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// Anonymisation checklist
+// ═══════════════════════════════════════════════════════════════
+function updateChkProgress(){
+  const boxes = document.querySelectorAll('#chk-list input[type=checkbox]');
+  const total = boxes.length;
+  let done = 0;
+  boxes.forEach((b,i)=>{
+    const item = b.closest('.chk-item');
+    if(b.checked){ done++; item.classList.add('checked'); }
+    else item.classList.remove('checked');
+  });
+  const countEl = document.getElementById('chk-count');
+  const hintEl  = document.getElementById('chk-hint');
+  countEl.textContent = `${done} / ${total} confirmed`;
+  if(done===total){
+    countEl.className='chk-count all-done';
+    hintEl.textContent='✓ All items confirmed — ready to submit.';
+    hintEl.style.color='var(--ok)';
+  } else {
+    countEl.className='chk-count';
+    hintEl.textContent=`— Please confirm all ${total} items before submitting.`;
+    hintEl.style.color='var(--muted)';
+  }
+}
+
+(function(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('sub-date').value = dd+'.'+mm+'.'+d.getFullYear();
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Validation
+// ═══════════════════════════════════════════════════════════════
+function showErr(id, msg){
+  const el = document.getElementById('err-'+id);
+  const inp = document.getElementById(id) || document.querySelector('[name="'+id+'"]');
+  if(el){el.textContent=msg||el.textContent;el.classList.add('show');}
+  if(inp){inp.classList.add('error');}
+}
+function clearErr(id){
+  const el = document.getElementById('err-'+id);
+  const inp = document.getElementById(id);
+  if(el)el.classList.remove('show');
+  if(inp)inp.classList.remove('error');
+}
+
+function validateForm(){
+  let ok = true;
+  const required = [
+    ['article-type','Please select an article type.'],
+    ['sub-date','Please enter the submission date.'],
+    ['title','Please enter the manuscript title.'],
+    ['abs-purpose','Please complete the Purpose section.'],
+    ['abs-method','Please complete the Method section.'],
+    ['abs-findings','Please complete the Findings section.'],
+    ['abs-conclusion','Please complete the Conclusion section.'],
+    ['body-intro','Please enter the Introduction section.'],
+    ['body-design','Please enter the Research Design subsection.'],
+    ['body-participants','Please enter the Participants subsection.'],
+    ['body-instruments','Please enter the Instruments subsection.'],
+    ['body-procedure','Please enter the Procedure subsection.'],
+    ['body-validity','Please enter the Validity and Reliability subsection.'],
+    ['body-analysis','Please enter the Data Analysis subsection.'],
+    ['body-discussion','Please enter the Discussion section.'],
+    ['body-conclusion','Please enter the Conclusion section.'],
+    ['body-limitations','Please enter the Limitations section.'],
+    ['references','Please enter the references.'],
+    ['author-email','Please enter a valid email address.'],
+  ];
+  required.forEach(([id,msg])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(!el.value.trim()){showErr(id,msg);ok=false;}
+    else clearErr(id);
+  });
+  // Email format
+  const emailEl = document.getElementById('author-email');
+  if(emailEl && emailEl.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value)){
+    showErr('author-email','Please enter a valid email address.');ok=false;
+  }
+  // Keywords: at least 3
+  const kws = ['kw1','kw2','kw3'].map(id=>document.getElementById(id).value.trim());
+  if(kws.some(k=>!k)){showErr('keywords','Please enter at least 3 keywords.');ok=false;}
+  else clearErr('keywords');
+  // Findings: at least 1
+  const findings = getFindingsData();
+  if(findings.length===0){
+    document.getElementById('err-findings').classList.add('show');ok=false;
+  } else { document.getElementById('err-findings').classList.remove('show'); }
+  // Checklist: all 8 must be ticked
+  const boxes = document.querySelectorAll('#chk-list input[type=checkbox]');
+  const allChecked = Array.from(boxes).every(b=>b.checked);
+  if(!allChecked){
+    document.getElementById('card11').scrollIntoView({behavior:'smooth',block:'center'});
+    document.getElementById('chk-hint').textContent='⚠ Please confirm all items before submitting.';
+    document.getElementById('chk-hint').style.color='var(--err)';
+    ok=false;
+  }
+  return ok;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Progress helper
+// ═══════════════════════════════════════════════════════════════
+function setProgress(pct){
+  document.getElementById('progress-wrap').style.display='block';
+  document.getElementById('progress-bar').style.width=pct+'%';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOCX generation — FULL MANUSCRIPT
+// ═══════════════════════════════════════════════════════════════
+async function buildDocx(data){
+  const {
+    Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
+    AlignmentType,BorderStyle,WidthType,ShadingType,VerticalAlign,LevelFormat
+  } = docx;
+
+  const DARK='3B2A7A', MED='5C4DB1', GOLD='F0A500', MUTED='888888',
+        WHITE='FFFFFF', LIGHT='EDE9F8', LINE='D8D1F2', WARN='FFF8E7',
+        WARNBD='E8A000', WARNLEFT='E8A000', WARNTEXT='7A4A00',
+        METABG1='EDE9F8', METABG2='FFFFFF', METABD='7C6FC4';
+
+  const A4W=11906, A4H=16838, MARGIN=1134;
+  const CW = A4W - MARGIN*2;
+
+  const F=(text,opts={})=>new TextRun({text,font:'Aptos',size:22,...opts});
+  const FB=(text,opts={})=>F(text,{bold:true,...opts});
+  const FI=(text,opts={})=>F(text,{italics:true,...opts});
+
+  const P=(children,opts={})=>new Paragraph({
+    children:Array.isArray(children)?children:[children],
+    spacing:{line:480,lineRule:'auto'},...opts
+  });
+  const PJ=(children,opts={})=>P(children,{alignment:AlignmentType.JUSTIFIED,...opts});
+  const PI=(children,opts={})=>P(children,{alignment:AlignmentType.JUSTIFIED,indent:{firstLine:720},...opts});
+
+  const cellBorder=(color,sz=4)=>({style:BorderStyle.SINGLE,size:sz,color});
+  const noBorder=()=>({style:BorderStyle.NONE,size:0,color:WHITE});
+  const cellMar=(t,l,b,r)=>({top:t,left:l,bottom:b,right:r});
+
+  // ── Helper: split text into paragraphs ────────────────────
+  function textToParagraphs(text, indentFirst=true){
+    const lines = text.split('\n').filter(l=>l.trim());
+    return lines.map((line,i)=>{
+      if(indentFirst && i>0){
+        return PI([F(line.trim())]);
+      }
+      return PJ([F(line.trim())]);
+    });
+  }
+
+  // ── Helper: section header bar ────────────────────────────
+  function secBar(title, hint, widths=[6800,CW-6800]){
+    return new Table({
+      width:{size:CW,type:WidthType.DXA},
+      columnWidths:widths,
+      rows:[new TableRow({
+        children:[
+          new TableCell({
+            width:{size:widths[0],type:WidthType.DXA},
+            shading:{fill:DARK,type:ShadingType.CLEAR},
+            margins:cellMar(130,220,130,220),
+            verticalAlign:VerticalAlign.CENTER,
+            borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+            children:[new Paragraph({children:[FB(title,{color:WHITE,size:24})],spacing:{line:276,lineRule:'auto'}})]
+          }),
+          new TableCell({
+            width:{size:widths[1],type:WidthType.DXA},
+            shading:{fill:DARK,type:ShadingType.CLEAR},
+            margins:cellMar(130,220,130,220),
+            verticalAlign:VerticalAlign.CENTER,
+            borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+            children:[new Paragraph({
+              children:[FI(hint,{color:'C9C0F0',size:18})],
+              alignment:AlignmentType.RIGHT,
+              spacing:{line:276,lineRule:'auto'}
+            })]
+          })
+        ]
+      })]
+    });
+  }
+
+  function contentCell(children){
+    return new Table({
+      width:{size:CW,type:WidthType.DXA},
+      columnWidths:[CW],
+      rows:[new TableRow({
+        children:[new TableCell({
+          width:{size:CW,type:WidthType.DXA},
+          shading:{fill:'F5F3FC',type:ShadingType.CLEAR},
+          margins:cellMar(120,220,120,220),
+          borders:{
+            top:{style:BorderStyle.SINGLE,size:4,color:METABD},
+            left:{style:BorderStyle.SINGLE,size:12,color:MED},
+            bottom:{style:BorderStyle.SINGLE,size:6,color:MED},
+            right:noBorder()
+          },
+          children
+        })]
+      })]
+    });
+  }
+
+  function contentCellWhite(children){
+    return new Table({
+      width:{size:CW,type:WidthType.DXA},
+      columnWidths:[CW],
+      rows:[new TableRow({
+        children:[new TableCell({
+          width:{size:CW,type:WidthType.DXA},
+          shading:{fill:WHITE,type:ShadingType.CLEAR},
+          margins:cellMar(160,220,160,220),
+          borders:{
+            top:{style:BorderStyle.SINGLE,size:4,color:METABD},
+            left:{style:BorderStyle.SINGLE,size:12,color:MED},
+            bottom:{style:BorderStyle.SINGLE,size:6,color:MED},
+            right:noBorder()
+          },
+          children
+        })]
+      })]
+    });
+  }
+
+  const sp=(n=80)=>new Paragraph({children:[F(' ')],spacing:{before:n,after:0,line:240,lineRule:'auto'}});
+
+  // ── Keywords string ─────────────────────────────────────────
+  const kwArr=[data.kw1,data.kw2,data.kw3,data.kw4,data.kw5].filter(Boolean);
+  const kwStr = kwArr.join('  •  ');
+
+  // ── APA ref item ────────────────────────────────────────────
+  function refItem(children){
+    return new Paragraph({
+      children,alignment:AlignmentType.LEFT,
+      indent:{left:720,hanging:720},
+      spacing:{line:480,lineRule:'auto',after:0}
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BUILD DOCUMENT
+  // ═══════════════════════════════════════════════════════════
+  const doc2 = new Document({
+    styles:{
+      default:{document:{run:{font:'Aptos',size:22}}},
+      paragraphStyles:[
+        {id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,
+         run:{font:'Aptos',size:24,bold:true,color:DARK},
+         paragraph:{spacing:{before:300,after:100},outlineLevel:0}},
+        {id:'Heading2',name:'Heading 2',basedOn:'Normal',next:'Normal',quickFormat:true,
+         run:{font:'Aptos',size:22,bold:true,color:MED},
+         paragraph:{spacing:{before:200,after:80},outlineLevel:1}},
+      ]
+    },
+    numbering:{config:[
+      {reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'•',alignment:AlignmentType.LEFT,
+        style:{paragraph:{indent:{left:720,hanging:360}}}}]},
+      {reference:'numbers',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,
+        style:{paragraph:{indent:{left:720,hanging:360}}}}]},
+    ]},
+    sections:[{
+      properties:{page:{size:{width:A4W,height:A4H},margin:{top:MARGIN,right:MARGIN,bottom:MARGIN,left:MARGIN}}},
+      children:[
+
+        // ── COVER ────────────────────────────────────────────
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[5400,CW-5400],
+          rows:[
+            new TableRow({children:[
+              new TableCell({
+                width:{size:5400,type:WidthType.DXA},
+                shading:{fill:DARK,type:ShadingType.CLEAR},
+                margins:cellMar(200,260,200,260),
+                verticalAlign:VerticalAlign.CENTER,
+                borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+                children:[
+                  new Paragraph({children:[FB('Pedagogical Perspective',{color:WHITE,size:34})],spacing:{after:60,line:276,lineRule:'auto'}}),
+                  new Paragraph({children:[FI('PedPer  •  ISSN: 2822-4841  •  pedagogicalperspective.com',{color:'C9C0F0',size:18})],spacing:{line:276,lineRule:'auto'}})
+                ]
+              }),
+              new TableCell({
+                width:{size:CW-5400,type:WidthType.DXA},
+                shading:{fill:DARK,type:ShadingType.CLEAR},
+                margins:cellMar(200,260,200,260),
+                verticalAlign:VerticalAlign.CENTER,
+                borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+                children:[
+                  new Paragraph({children:[FB('MANUSCRIPT',{color:GOLD,size:26})],alignment:AlignmentType.RIGHT,spacing:{after:40,line:276,lineRule:'auto'}}),
+                  new Paragraph({children:[FI('Anonymised Submission Format',{color:'C9C0F0',size:18})],alignment:AlignmentType.RIGHT,spacing:{line:276,lineRule:'auto'}})
+                ]
+              })
+            ]}),
+            new TableRow({children:[
+              new TableCell({
+                gridSpan:2,
+                width:{size:CW,type:WidthType.DXA},
+                shading:{fill:GOLD,type:ShadingType.CLEAR},
+                margins:cellMar(8,0,8,0),
+                borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+                children:[new Paragraph({children:[F(' ')],spacing:{line:240,lineRule:'auto'}})]
+              })
+            ]})
+          ]
+        }),
+        sp(160),
+
+        // ── WARNING BOX ──────────────────────────────────────
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[CW],
+          rows:[new TableRow({children:[new TableCell({
+            width:{size:CW,type:WidthType.DXA},
+            shading:{fill:WARN,type:ShadingType.CLEAR},
+            margins:cellMar(100,220,100,220),
+            borders:{
+              top:{style:BorderStyle.SINGLE,size:4,color:WARNBD},
+              left:{style:BorderStyle.SINGLE,size:16,color:WARNLEFT},
+              bottom:{style:BorderStyle.SINGLE,size:4,color:WARNBD},
+              right:noBorder()
+            },
+            children:[
+              new Paragraph({children:[FI('\u26A0  This document is for double-blind peer review. Do not include author names, affiliations, ORCID IDs, funding details, acknowledgements, or any information that could identify the authors or institution.',{color:WARNTEXT,size:20})],spacing:{before:50,after:50,line:276,lineRule:'auto'}}),
+              new Paragraph({children:[FI('    Ensure that file properties and metadata are also cleared of author information before submission.',{color:WARNTEXT,size:20})],spacing:{before:50,after:50,line:276,lineRule:'auto'}})
+            ]
+          })]})]
+        }),
+        sp(160),
+
+        // ── METADATA ROW ─────────────────────────────────────
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[Math.floor(CW/3),Math.floor(CW/3),CW-Math.floor(CW/3)*2],
+          rows:[new TableRow({children:[
+            new TableCell({
+              width:{size:Math.floor(CW/3),type:WidthType.DXA},
+              shading:{fill:METABG1,type:ShadingType.CLEAR},
+              margins:cellMar(80,160,80,160),
+              borders:{top:cellBorder(METABD),left:cellBorder(METABD),bottom:{style:BorderStyle.SINGLE,size:6,color:MED},right:cellBorder(METABD)},
+              children:[
+                new Paragraph({children:[FB('Article Type',{color:DARK,size:18})],spacing:{after:40,line:276,lineRule:'auto'}}),
+                new Paragraph({children:[FI(data.articleType,{color:'555555',size:20})],spacing:{line:276,lineRule:'auto'}})
+              ]
+            }),
+            new TableCell({
+              width:{size:Math.floor(CW/3),type:WidthType.DXA},
+              shading:{fill:WHITE,type:ShadingType.CLEAR},
+              margins:cellMar(80,160,80,160),
+              borders:{top:cellBorder(METABD),left:cellBorder(METABD),bottom:{style:BorderStyle.SINGLE,size:6,color:MED},right:cellBorder(METABD)},
+              children:[
+                new Paragraph({children:[FB('Manuscript ID',{color:DARK,size:18})],spacing:{after:40,line:276,lineRule:'auto'}}),
+                new Paragraph({children:[FI('[Assigned by editorial office]',{color:'555555',size:20})],spacing:{line:276,lineRule:'auto'}})
+              ]
+            }),
+            new TableCell({
+              width:{size:CW-Math.floor(CW/3)*2,type:WidthType.DXA},
+              shading:{fill:METABG1,type:ShadingType.CLEAR},
+              margins:cellMar(80,160,80,160),
+              borders:{top:cellBorder(METABD),left:cellBorder(METABD),bottom:{style:BorderStyle.SINGLE,size:6,color:MED},right:cellBorder(METABD)},
+              children:[
+                new Paragraph({children:[FB('Submission Date',{color:DARK,size:18})],spacing:{after:40,line:276,lineRule:'auto'}}),
+                new Paragraph({children:[FI(data.subDate,{color:'555555',size:20})],spacing:{line:276,lineRule:'auto'}})
+              ]
+            })
+          ]})]
+        }),
+        sp(160),
+
+        // ── TITLE ────────────────────────────────────────────
+        secBar('TITLE','Sentence case • 10–12 words'),
+        contentCell([
+          new Paragraph({
+            children:[new TextRun({text:data.title,font:'Aptos',size:28,bold:true,italics:false,color:'333333'})],
+            spacing:{before:60,after:60,line:300,lineRule:'auto'}
+          }),
+          sp(60)
+        ]),
+        sp(160),
+
+        // ── ABSTRACT ─────────────────────────────────────────
+        secBar('STRUCTURED ABSTRACT','250–300 words • No citations'),
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[1100,CW-1100],
+          rows:[
+            ['Purpose',data.absPurpose],
+            ['Method',data.absMethod],
+            ['Findings',data.absFindings],
+            ['Conclusion',data.absConclusion],
+          ].map(([label,value],i,arr)=>new TableRow({children:[
+            new TableCell({
+              width:{size:1100,type:WidthType.DXA},
+              shading:{fill:METABG1,type:ShadingType.CLEAR},
+              margins:cellMar(80,160,80,160),
+              verticalAlign:VerticalAlign.TOP,
+              borders:{
+                top:cellBorder(METABD),left:cellBorder(METABD),
+                bottom:i===arr.length-1?{style:BorderStyle.SINGLE,size:6,color:MED}:cellBorder(METABD),
+                right:cellBorder(METABD)
+              },
+              children:[new Paragraph({children:[FB(label,{color:DARK,size:18})],spacing:{line:276,lineRule:'auto'}})]
+            }),
+            new TableCell({
+              width:{size:CW-1100,type:WidthType.DXA},
+              shading:{fill:WHITE,type:ShadingType.CLEAR},
+              margins:cellMar(80,160,80,160),
+              borders:{
+                top:cellBorder(METABD),left:cellBorder(METABD),
+                bottom:i===arr.length-1?{style:BorderStyle.SINGLE,size:6,color:MED}:cellBorder(METABD),
+                right:noBorder()
+              },
+              children:[new Paragraph({children:[FI(value,{color:'333333',size:22})],alignment:AlignmentType.JUSTIFIED,spacing:{line:480,lineRule:'auto'}})]
+            })
+          ]}))
+        }),
+        sp(160),
+
+        // ── KEYWORDS ─────────────────────────────────────────
+        secBar('KEYWORDS','3–7 keywords • Not from title'),
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[CW],
+          rows:[new TableRow({children:[new TableCell({
+            width:{size:CW,type:WidthType.DXA},
+            shading:{fill:WHITE,type:ShadingType.CLEAR},
+            margins:cellMar(120,160,120,160),
+            borders:{top:cellBorder(METABD),left:{style:BorderStyle.SINGLE,size:12,color:MED},bottom:{style:BorderStyle.SINGLE,size:6,color:MED},right:noBorder()},
+            children:[new Paragraph({children:[F(kwStr,{size:22})],spacing:{line:276,lineRule:'auto'}})]
+          })]})]
+        }),
+        sp(200),
+
+        // ═══════════════════════════════════════════════════════
+        // MAIN BODY TEXT — actual content from form
+        // ═══════════════════════════════════════════════════════
+
+        // ── INTRODUCTION ──────────────────────────────────────
+        new Paragraph({heading:'Heading1',children:[FB('Introduction',{color:DARK,size:24})],spacing:{before:0,after:100}}),
+        ...textToParagraphs(data.bodyIntro),
+        sp(100),
+
+        // ── METHOD ────────────────────────────────────────────
+        new Paragraph({heading:'Heading1',children:[FB('Method',{color:DARK,size:24})],spacing:{before:300,after:100}}),
+
+        new Paragraph({heading:'Heading2',children:[FB('Research Design',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyDesign),
+
+        new Paragraph({heading:'Heading2',children:[FB('Participants / Study Group',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyParticipants),
+
+        new Paragraph({heading:'Heading2',children:[FB('Data Collection Instruments',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyInstruments),
+
+        new Paragraph({heading:'Heading2',children:[FB('Procedure',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyProcedure),
+
+        new Paragraph({heading:'Heading2',children:[FB('Validity and Reliability',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyValidity),
+
+        new Paragraph({heading:'Heading2',children:[FB('Data Analysis',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyAnalysis),
+        sp(100),
+
+        // ── FINDINGS ──────────────────────────────────────────
+        new Paragraph({heading:'Heading1',children:[FB('Findings',{color:DARK,size:24})],spacing:{before:300,after:100}}),
+        ...(()=>{
+          const out = [];
+          data.findings.forEach((f,i)=>{
+            const heading = f.title || ('Finding ' + (i+1));
+            out.push(new Paragraph({heading:'Heading2',children:[FB(heading,{color:MED,size:22})],spacing:{before:200,after:80}}));
+            out.push(...textToParagraphs(f.text));
+          });
+          return out;
+        })(),
+        sp(100),
+
+        // ── DISCUSSION ────────────────────────────────────────
+        new Paragraph({heading:'Heading1',children:[FB('Discussion',{color:DARK,size:24})],spacing:{before:300,after:100}}),
+        ...textToParagraphs(data.bodyDiscussion),
+        sp(100),
+
+        // ── CONCLUSION ────────────────────────────────────────
+        new Paragraph({heading:'Heading1',children:[FB('Conclusion and Recommendations',{color:DARK,size:24})],spacing:{before:300,after:100}}),
+        ...textToParagraphs(data.bodyConclusion),
+
+        new Paragraph({heading:'Heading2',children:[FB('Limitations and Directions for Future Research',{color:MED,size:22})],spacing:{before:200,after:80}}),
+        ...textToParagraphs(data.bodyLimitations),
+        sp(200),
+
+        // ── TABLES & FIGURES ──────────────────────────────────
+        secBar('TABLES & FIGURES','Insert at first mention in text'),
+        contentCellWhite([
+          new Paragraph({children:[FI('Each table and figure should be cited in the main text and placed at its first mention. Remove any identifying logos, letterheads, or location names.',{color:MUTED,size:20})],spacing:{before:60,after:100,line:276,lineRule:'auto'}}),
+          sp(20),
+          ...(()=>{
+            const items = data.tfItems && data.tfItems.length > 0 ? data.tfItems : [];
+            if(items.length===0){
+              return [
+                new Paragraph({children:[FI('[No tables or figures were added.]',{color:MUTED,size:20})],spacing:{before:40,after:40,line:276,lineRule:'auto'},alignment:AlignmentType.CENTER}),
+              ];
+            }
+            const out = [];
+            items.forEach(item=>{
+              const label = `${item.kind==='figure'?'Figure':'Table'} ${item.num||''}`.trim();
+              const title = item.title || `[Title of ${label}]`;
+              out.push(new Paragraph({children:[FB(label,{color:DARK}),F('  '),FI(title,{color:'333333'})],spacing:{before:160,after:60,line:276,lineRule:'auto'}}));
+              if(item.kind==='figure'){
+                if(item.imgSrc && item.imgSrc.startsWith('data:')){
+                  try{
+                    const base64 = item.imgSrc.split(',')[1];
+                    const mimeMatch = item.imgSrc.match(/data:([^;]+);/);
+                    const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                    const ext = mime.includes('png')?'png':mime.includes('gif')?'gif':'jpg';
+                    out.push(new Paragraph({
+                      children:[new docx.ImageRun({data:base64,transformation:{width:400,height:280},type:ext})],
+                      alignment:AlignmentType.CENTER,
+                      spacing:{before:40,after:40,line:276,lineRule:'auto'}
+                    }));
+                  }catch(e){
+                    out.push(new Paragraph({children:[FI('[ Image could not be embedded — please insert manually ]',{color:MUTED,size:20})],spacing:{before:40,after:40,line:276,lineRule:'auto'},alignment:AlignmentType.CENTER}));
+                  }
+                } else {
+                  out.push(new Paragraph({children:[FI('[ Insert figure here at 300 DPI minimum ]',{color:MUTED,size:20})],spacing:{before:40,after:40,line:276,lineRule:'auto'},alignment:AlignmentType.CENTER}));
+                }
+                out.push(new Paragraph({children:[FI(`${label}. ${title}${item.note?'  '+item.note:''}`,{color:'555555',size:20})],spacing:{before:30,after:80,line:276,lineRule:'auto'}}));
+              } else {
+                if(item.rows && item.rows.length>0){
+                  const cols = item.rows[0].length || 1;
+                  const colW = Math.floor((CW-200)/cols);
+                  const tblRows = item.rows.map((row,ri)=>new TableRow({children:
+                    row.map((cell,ci)=>new TableCell({
+                      width:{size:colW,type:WidthType.DXA},
+                      shading:{fill:ri===0?METABG1:WHITE,type:ShadingType.CLEAR},
+                      margins:cellMar(60,100,60,100),
+                      borders:{
+                        top:ri===0?{style:BorderStyle.SINGLE,size:8,color:DARK}:{style:BorderStyle.NONE,size:0,color:WHITE},
+                        bottom:ri===0?{style:BorderStyle.SINGLE,size:6,color:DARK}:ri===item.rows.length-1?{style:BorderStyle.SINGLE,size:8,color:DARK}:{style:BorderStyle.NONE,size:0,color:WHITE},
+                        left:{style:BorderStyle.NONE,size:0,color:WHITE},
+                        right:{style:BorderStyle.NONE,size:0,color:WHITE},
+                      },
+                      children:[new Paragraph({children:[ri===0?FB(cell||'',{color:DARK,size:20}):F(cell||'',{size:20})],spacing:{line:276,lineRule:'auto'}})]
+                    }))
+                  }));
+                  out.push(new Table({width:{size:CW-200,type:WidthType.DXA},columnWidths:Array(cols).fill(colW),rows:tblRows}));
+                } else {
+                  out.push(new Paragraph({children:[FI('[ Insert table here — APA 7 style ]',{color:MUTED,size:20})],spacing:{before:40,after:40,line:276,lineRule:'auto'},alignment:AlignmentType.CENTER}));
+                }
+                const noteText = item.note ? `Note. ${item.note}` : 'Note. [Add table notes here if needed.]';
+                out.push(new Paragraph({children:[FI(noteText,{color:MUTED,size:20})],spacing:{before:30,after:80,line:276,lineRule:'auto'}}));
+              }
+            });
+            return out;
+          })(),
+          sp(40)
+        ]),
+        sp(200),
+
+        // ── REFERENCES ────────────────────────────────────────
+        secBar('REFERENCES','APA 7th edition • Alphabetical'),
+        contentCellWhite([
+          new Paragraph({children:[FI('APA 7th edition • Alphabetical order by first author\'s surname • 0.5-inch hanging indent • DOI as hyperlink where available.',{color:MUTED,size:20})],spacing:{before:60,after:100,line:276,lineRule:'auto'}}),
+          ...(()=>{
+            const lines = (data.references||'').split('\n').map(l=>l.trim()).filter(Boolean);
+            return lines.map(line=>refItem([F(line)]));
+          })(),
+          sp(80)
+        ]),
+        sp(200),
+
+        // ── ANONYMISATION CHECKLIST ───────────────────────────
+        secBar('ANONYMISATION CHECKLIST','Complete before submission',[6800,CW-6800]),
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[500,CW-500],
+          rows:[
+            'Author names and affiliations removed from title page and all sections of the manuscript.',
+            'Self-citations replaced with \u201cAuthor (Year)\u201d in text and \u201c[AUTHOR REFERENCE]\u201d in the reference list.',
+            'Ethics committee name anonymised (e.g., \u201cXXX Ethics Committee\u201d \u2014 number and date may remain).',
+            'Institution, school, city, and region names anonymised throughout the manuscript.',
+            'Funding information and acknowledgements removed.',
+            'File properties and metadata cleared of author names and institution.',
+            'Figures, images, and tables contain no identifying logos, letterheads, or location names.',
+            'ORCID IDs removed from the main document (added on title page only, which is submitted separately).',
+          ].map((txt,i)=>new TableRow({children:[
+            new TableCell({
+              width:{size:500,type:WidthType.DXA},
+              shading:{fill:i%2===0?LIGHT:WHITE,type:ShadingType.CLEAR},
+              margins:cellMar(80,120,80,120),
+              verticalAlign:VerticalAlign.CENTER,
+              borders:{top:cellBorder(LINE),left:cellBorder(METABD),bottom:cellBorder(LINE),right:cellBorder(METABD)},
+              children:[new Paragraph({children:[F('☑',{size:24})],alignment:AlignmentType.CENTER,spacing:{line:276,lineRule:'auto'}})]
+            }),
+            new TableCell({
+              width:{size:CW-500,type:WidthType.DXA},
+              shading:{fill:i%2===0?LIGHT:WHITE,type:ShadingType.CLEAR},
+              margins:cellMar(80,160,80,160),
+              borders:{top:cellBorder(LINE),left:cellBorder(METABD),bottom:cellBorder(LINE),right:cellBorder(METABD)},
+              children:[new Paragraph({children:[F(txt,{size:20})],spacing:{line:276,lineRule:'auto'}})]
+            })
+          ]}))
+        }),
+        sp(200),
+
+        // ── FOOTER ───────────────────────────────────────────
+        new Table({
+          width:{size:CW,type:WidthType.DXA},
+          columnWidths:[Math.floor(CW*.65),CW-Math.floor(CW*.65)],
+          rows:[new TableRow({children:[
+            new TableCell({
+              width:{size:Math.floor(CW*.65),type:WidthType.DXA},
+              shading:{fill:DARK,type:ShadingType.CLEAR},
+              margins:cellMar(100,200,100,200),
+              borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+              children:[new Paragraph({children:[FI('Pedagogical Perspective (PedPer)  •  Double-Blind Peer Review  •  CC BY 4.0',{color:'C9C0F0',size:18})],spacing:{line:276,lineRule:'auto'}})]
+            }),
+            new TableCell({
+              width:{size:CW-Math.floor(CW*.65),type:WidthType.DXA},
+              shading:{fill:DARK,type:ShadingType.CLEAR},
+              margins:cellMar(100,200,100,200),
+              borders:{top:noBorder(),bottom:noBorder(),left:noBorder(),right:noBorder()},
+              children:[new Paragraph({children:[FI('ISSN: 2822-4841',{color:'C9C0F0',size:18})],alignment:AlignmentType.RIGHT,spacing:{line:276,lineRule:'auto'}})]
+            })
+          ]})]
+        })
+
+      ] // end children
+    }] // end sections
+  });
+
+  return await Packer.toBlob(doc2);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Download blob as file
+// ═══════════════════════════════════════════════════════════════
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); document.body.removeChild(a); }, 2000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Send via Web3Forms
+// ═══════════════════════════════════════════════════════════════
+async function sendEmail(data){
+  const kwArr=[data.kw1,data.kw2,data.kw3,data.kw4,data.kw5].filter(Boolean);
+  const body = `
+PedPer Full Manuscript Submission
+===================================
+Article Type:    ${data.articleType}
+Submission Date: ${data.subDate}
+Title:           ${data.title}
+Keywords:        ${kwArr.join(' • ')}
+
+ABSTRACT
+--------
+Purpose:    ${data.absPurpose}
+Method:     ${data.absMethod}
+Findings:   ${data.absFindings}
+Conclusion: ${data.absConclusion}
+
+BODY SECTIONS INCLUDED
+-----------------------
+Introduction: ${wordCount(data.bodyIntro)} words
+Method: ${wordCount(data.bodyDesign)+wordCount(data.bodyParticipants)+wordCount(data.bodyInstruments)+wordCount(data.bodyProcedure)+wordCount(data.bodyValidity)+wordCount(data.bodyAnalysis)} words
+Findings: ${data.findings.reduce((s,f)=>s+wordCount(f.text),0)} words (${data.findings.length} themes)
+Discussion: ${wordCount(data.bodyDiscussion)} words
+Conclusion: ${wordCount(data.bodyConclusion)+wordCount(data.bodyLimitations)} words
+
+REFERENCES
+----------
+${data.references || '[Not provided]'}
+  `.trim();
+
+  document.getElementById('web3-message').value = body;
+
+  // 1. Author confirmation
+  const authorResp = await fetch('https://api.web3forms.com/submit',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      access_key:'50b20f12-c947-406a-9d87-96ca8d298262',
+      subject:'PedPer — Your Complete Manuscript is Ready',
+      from_name:'Pedagogical Perspective',
+      email: data.authorEmail,
+      replyto:'editor@pedagogicalperspective.com',
+      message:`Dear Author,\n\nThank you for using the Pedagogical Perspective Manuscript Template Generator.\n\nYour COMPLETE manuscript has been downloaded to your device as a Word file. This document includes all sections and is ready for direct submission via OJS — no further editing is required.\n\n──────────────────────────────\nYOUR SUBMISSION DETAILS\n──────────────────────────────\nArticle Type : ${data.articleType}\nTitle        : ${data.title}\nKeywords     : ${kwArr.join(' • ')}\n\nAbstract\n  Purpose    : ${data.absPurpose.substring(0,120)}...\n  Method     : ${data.absMethod.substring(0,120)}...\n  Findings   : ${data.absFindings.substring(0,120)}...\n  Conclusion : ${data.absConclusion.substring(0,120)}...\n──────────────────────────────\n\nSubmission portal: https://pedagogicalperspective.com\nQuestions: editor@pedagogicalperspective.com\n\nKind regards,\nPedagogical Perspective Editorial Office`
+    })
+  });
+
+  // 2. Editor notification
+  await fetch('https://api.web3forms.com/submit',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      access_key:'50b20f12-c947-406a-9d87-96ca8d298262',
+      subject:`PedPer — Full Manuscript: ${data.title.substring(0,60)}`,
+      from_name:'PedPer Template Generator',
+      email:'editor@pedagogicalperspective.com',
+      replyto: data.authorEmail,
+      message: body
+    })
+  });
+
+  return authorResp.ok;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Submit handler
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('tmpl-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  document.getElementById('form-err-banner').classList.remove('show');
+
+  if(!validateForm()){
+    document.getElementById('form-err-banner').classList.add('show');
+    document.getElementById('form-err-banner').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  // Update steps
+  const stepIds = ['step1','step2','step3','step4','step5','step6','step7','step8'];
+  stepIds.forEach(id=>document.getElementById(id).className='step done');
+
+  // Collect data
+  const get = id => document.getElementById(id).value.trim();
+  const data = {
+    articleType: get('article-type'),
+    subDate: get('sub-date'),
+    title: get('title'),
+    absPurpose: get('abs-purpose'),
+    absMethod: get('abs-method'),
+    absFindings: get('abs-findings'),
+    absConclusion: get('abs-conclusion'),
+    bodyIntro: get('body-intro'),
+    bodyDesign: get('body-design'),
+    bodyParticipants: get('body-participants'),
+    bodyInstruments: get('body-instruments'),
+    bodyProcedure: get('body-procedure'),
+    bodyValidity: get('body-validity'),
+    bodyAnalysis: get('body-analysis'),
+    findings: getFindingsData(),
+    bodyDiscussion: get('body-discussion'),
+    bodyConclusion: get('body-conclusion'),
+    bodyLimitations: get('body-limitations'),
+    references: get('references'),
+    tfItems: getTFItems(),
+    kw1: get('kw1'), kw2: get('kw2'), kw3: get('kw3'),
+    kw4: get('kw4'), kw5: get('kw5'),
+    authorEmail: get('author-email'),
+  };
+
+  // UI: loading
+  const btn = document.getElementById('submit-btn');
+  const label = document.getElementById('submit-label');
+  const spinner = document.getElementById('submit-spinner');
+  btn.disabled = true;
+  label.textContent = 'Generating manuscript…';
+  spinner.style.display = 'block';
+  setProgress(15);
+
+  try {
+    setProgress(35);
+    const blob = await buildDocx(data);
+    setProgress(65);
+
+    const safeName = data.title.replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_').substring(0,40);
+    downloadBlob(blob, `PedPer_Manuscript_${safeName || 'Template'}.docx`);
+    setProgress(80);
+
+    label.textContent = 'Sending confirmation email…';
+    await sendEmail(data);
+    setProgress(100);
+
+    setTimeout(()=>{
+      document.getElementById('tmpl-form').style.display='none';
+      const ss = document.getElementById('success-screen');
+      ss.style.display='block';
+      document.getElementById('success-email').textContent = data.authorEmail;
+      ss.scrollIntoView({behavior:'smooth',block:'start'});
+    }, 400);
+
+  } catch(err){
+    console.error(err);
+    btn.disabled=false;
+    label.textContent='⬇ Download Manuscript & Send Email';
+    spinner.style.display='none';
+    document.getElementById('progress-wrap').style.display='none';
+    stepIds.forEach(id=>document.getElementById(id).className='step');
+    document.getElementById('step1').className='step active';
+    alert('An error occurred: '+err.message+'\n\nPlease try again or contact editor@pedagogicalperspective.com');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Reset
+// ═══════════════════════════════════════════════════════════════
+function resetForm(){
+  document.getElementById('tmpl-form').reset();
+  document.getElementById('tmpl-form').style.display='block';
+  document.getElementById('success-screen').style.display='none';
+  document.getElementById('progress-wrap').style.display='none';
+  document.getElementById('submit-btn').disabled=false;
+  document.getElementById('submit-label').textContent='⬇ Download Manuscript & Send Email';
+  document.getElementById('submit-spinner').style.display='none';
+  const stepIds = ['step1','step2','step3','step4','step5','step6','step7','step8'];
+  stepIds.forEach(id=>document.getElementById(id).className='step');
+  document.getElementById('step1').className='step active';
+  const d=new Date();
+  document.getElementById('sub-date').value=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+  document.getElementById('ref-count-row').textContent='';
+  // Reset checklist
+  document.querySelectorAll('#chk-list input[type=checkbox]').forEach(b=>{ b.checked=false; b.closest('.chk-item').classList.remove('checked'); });
+  updateChkProgress();
+  // Reset TF
+  document.getElementById('tf-list').innerHTML=''; tfCounter=0;
+  // Reset findings
+  document.getElementById('findings-list').innerHTML=''; findingCounter=0;
+  addFindingTheme();
+  // Reset word count badges
+  document.querySelectorAll('.wc-badge').forEach(el=>{el.textContent='0 words';el.className='wc-badge';});
+  document.getElementById('abs-wc').textContent='0 words total';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Reference counter
+document.getElementById('references').addEventListener('input', function(){
+  const lines = this.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const el = document.getElementById('ref-count-row');
+  if(lines.length===0){ el.textContent=''; return; }
+  const color = lines.length>50 ? '#c0392b' : '#1a7a3b';
+  el.innerHTML = `<span style="color:${color};font-weight:600;">${lines.length} reference${lines.length>1?'s':''}</span>${lines.length>50?' — exceeds APA 7 max. of 50':' entered'}`;
+});
+</script>
+</body>
+</html>
